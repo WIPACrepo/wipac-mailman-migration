@@ -1,0 +1,5 @@
+google-api-python-client
+google-auth-oauthlib
+wipac-keycloak-rest-services
+unidecode
+colorlog
