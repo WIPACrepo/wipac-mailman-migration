@@ -21,6 +21,8 @@ Members who receive list traffic in digest form will need to go to https://group
 
 Everybody who will transition to the new system will receive an email notifying them of being subscribed to this mailing list before we actually cutover. It's the new system acknowledging addition of new users.
 
+If you receive neither subscription confirmation nor instructions on how to subscribe to the mailing list, please contact me.
+
 [1] Instructions on how to log in to Google services using an IceCube account can be found here: https://wipacit.freshservice.com/support/solutions/articles/21000726028 (basically, log in using ldap_user_name@icecube.wisc.edu)
 
 [2] Instructions on how to join/leave groups using https://user-management.icecube.aq/ are here: https://docs.icecube.aq/Madison-account/user-workflow/group_join/.
