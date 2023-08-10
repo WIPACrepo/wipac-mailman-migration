@@ -182,13 +182,22 @@ async def mailman_to_keycloak_member_import(
             username = username_from_canon_addr.get(email, username)
             if username not in all_users:
                 logger.warning(f"Unknown user {email}")
+                logger.info(f"Adding unknown {email} to list of instructions recipients")
+                send_regular_instructions_to.add(email)
+                continue
+            user_insts = all_users[username]["attributes"].get("institutions_last_seen", "")
+            if not any(f"/{exp}/" in user_insts for exp in required_experiments):
+                logger.warning(
+                    f"{username} disallowed: institutions {user_insts} not in {required_experiments} experiments"
+                )
+                logger.info(f"Adding disallowed {email} to list of instructions recipients")
                 send_regular_instructions_to.add(email)
                 continue
             logger.info(f"Adding {username} as MEMBER")
             if not dryrun:
                 await add_user_group(keycloak_group, username, rest_client=keycloak)
         else:
-            logger.info(f"Add non-icecube member {email} to list of instructions recipients")
+            logger.info(f"Adding non-icecube member {email} to list of instructions recipients")
             send_regular_instructions_to.add(email)
 
     for email in send_regular_instructions_to:
@@ -265,7 +274,7 @@ def main():
         metavar="NAME",
         required=True,
         nargs="+",
-        help="experiment(s) to use in instructions emails",
+        help="experiment(s) required for membership in the target group",
     )
     parser.add_argument(
         "--extra-admins",
@@ -288,7 +297,7 @@ def main():
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="perform a trial run with no changes made and now emails sent",
+        help="perform a trial run with no changes made and no emails sent",
     )
     parser.add_argument(
         "--log-level",
