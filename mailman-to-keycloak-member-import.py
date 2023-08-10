@@ -215,7 +215,7 @@ async def mailman_to_keycloak_member_import(
             )
 
     send_owner_instructions_to = set()
-    for email in mmcfg["owner"]:
+    for email in set(mmcfg["owner"] + mmcfg["moderator"]):
         username, domain = email.split("@")
         if domain == "icecube.wisc.edu":
             username = username_from_canon_addr.get(email, username)

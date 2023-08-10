@@ -93,7 +93,7 @@ def main():
             logging.info(f"Skipping digest member {member} (on the ignore list)")
             continue
         body = {"email": member, "delivery_settings": "DIGEST"}
-        if member in mmcfg["owner"]:
+        if member in set(mmcfg["owner"] + mmcfg["moderator"]):
             logging.info(f"Inserting digest member {member} (manager)")
             body["role"] = "MANAGER"
         else:
@@ -111,7 +111,7 @@ def main():
             logging.info(f"Skipping member {member} (on the ignore list)")
             continue
         body = {"email": member, "delivery_settings": "ALL_MAIL"}
-        if member in mmcfg["owner"]:
+        if member in set(mmcfg["owner"] + mmcfg["moderator"]):
             logging.info(f"Inserting member {member} (manager)")
             body["role"] = "MANAGER"
         else:
@@ -124,7 +124,7 @@ def main():
             else:
                 raise
 
-    for owner in set(mmcfg["owner"]) - set(mmcfg["digest_members"] + mmcfg["regular_members"]):
+    for owner in set(mmcfg["owner"] + mmcfg["moderator"]) - set(mmcfg["digest_members"] + mmcfg["regular_members"]):
         if owner in args.ignore:
             logging.info(f"Skipping non-member manager {owner} (on the ignore list)")
             continue
