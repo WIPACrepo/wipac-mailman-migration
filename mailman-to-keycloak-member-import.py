@@ -312,9 +312,6 @@ def main():
     handler = logging.StreamHandler()
     handler.setFormatter(ColorLoggingFormatter(dryrun=args.dry_run))
     logger.addHandler(handler)
-    if args.log_level == "info":
-        ClientCredentialsAuth = logging.getLogger("ClientCredentialsAuth")
-        ClientCredentialsAuth.setLevel(logging.WARNING)  # too noisy
 
     logger.info(f"Loading mailman list configuration from {args.mailman_pickle}")
     with open(args.mailman_pickle, "rb") as f:
