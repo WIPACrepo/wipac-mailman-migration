@@ -124,7 +124,9 @@ def main():
             else:
                 raise
 
-    for owner in set(mmcfg["owner"] + mmcfg["moderator"]) - set(mmcfg["digest_members"] + mmcfg["regular_members"]):
+    for owner in set(mmcfg["owner"] + mmcfg["moderator"]) - set(
+        mmcfg["digest_members"] + mmcfg["regular_members"]
+    ):
         if owner in args.ignore:
             logging.info(f"Skipping non-member manager {owner} (on the ignore list)")
             continue
@@ -147,7 +149,7 @@ def main():
         if not re.match(email_regex, nonmember):
             logging.warning(f"Ignoring invalid non-member email {nonmember}")
             continue
-        logging.info(f"Inserting non-member {nonmember}")
+        logging.info(f"Inserting mailman non-member {nonmember} as no-delivery member")
         try:
             members.insert(
                 groupKey=ggcfg["email"],
@@ -155,8 +157,8 @@ def main():
             ).execute()
         except HttpError as e:
             if e.status_code == 409:  # entity already exists
-                logging.error(f"User {nonmember} already part of the group")
-                logging.warning(f"!!!  RESOLVE CONFLICT MANUALLY FOR: {nonmember}")
+                logging.error(f"User {nonmember} already part of the group; 'delivery_settings' not updated")
+                logging.warning(f"!!!  SET 'delivery_settings' MANUALLY FOR {nonmember}")
 
     svc.close()
 
