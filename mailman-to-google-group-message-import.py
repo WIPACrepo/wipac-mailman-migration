@@ -119,6 +119,7 @@ def worker(work_q, feedback_q, ready_q, backoff_q, group, creds, delegator):
             try:
                 with Timer() as timer:
                     res = req.execute()
+                    print('.', end='', flush=True)
             except HttpError as e:
                 logging.info(f"{pid} caught HttpError {repr(e)}")
                 if e.status_code == 503:
