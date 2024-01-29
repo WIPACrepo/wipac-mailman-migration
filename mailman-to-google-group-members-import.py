@@ -84,6 +84,8 @@ def main():
     svc = discovery.build("admin", "directory_v1", credentials=creds, cache_discovery=False)
     members = svc.members()
 
+    group_has_managers = False
+
     # The flow for populating members and designating managers is a little
     # weird to work around a Google API bug where members.get() fails sometimes:
     # https://stackoverflow.com/questions/66992809/google-admin-sdk-directory-api-members-get-returns-a-404-for-member-email-but
@@ -94,6 +96,7 @@ def main():
             continue
         body = {"email": member, "delivery_settings": "DIGEST"}
         if member in set(mmcfg["owner"] + mmcfg["moderator"]):
+            group_has_managers = True
             logging.info(f"Inserting digest member {member} (manager)")
             body["role"] = "MANAGER"
         else:
@@ -112,6 +115,7 @@ def main():
             continue
         body = {"email": member, "delivery_settings": "ALL_MAIL"}
         if member in set(mmcfg["owner"] + mmcfg["moderator"]):
+            group_has_managers = True
             logging.info(f"Inserting member {member} (manager)")
             body["role"] = "MANAGER"
         else:
@@ -131,6 +135,7 @@ def main():
             logging.info(f"Skipping non-member manager {owner} (on the ignore list)")
             continue
         logging.info(f"Inserting non-member manager {owner}")
+        group_has_managers = True
         try:
             members.insert(
                 groupKey=ggcfg["email"],
@@ -161,6 +166,9 @@ def main():
                 logging.warning(f"!!!  SET 'delivery_settings' MANUALLY FOR {nonmember}")
 
     svc.close()
+
+    if not group_has_managers:
+        logging.warning(f"Group has no managers. Nobody can approve messages and membership requests.")
 
     addr, domain = ggcfg["email"].split("@")
     logging.info(
