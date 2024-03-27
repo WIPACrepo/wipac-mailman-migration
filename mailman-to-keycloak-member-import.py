@@ -39,8 +39,7 @@ of membership restrictions begins you must:
     (Skip this step if you want to use your IceCube address.)
     - Go to https://user-management.icecube.aq and log in using
       your IceCube credentials.
-    - Under "My profile", fill in "mailing_list_email" field and
-      click "Update".
+    - Under "My profile", fill in "List Email" field and click "Update".
 
 (2) Ensure that you are a member of an institution belonging to
     one of {experiment_list} experiment(s).
@@ -57,7 +56,7 @@ of membership restrictions begins you must:
       your IceCube credentials.
     - Under "Groups" at the bottom of the page, click "Join a group"
     - Select the appropriate group (look for prefix "/mail/")
-    - Click "Submit Join Request"
+    - Click "Submit Join Request".
 
 In order to avoid a disruption in receiving of messages from
 {list_addr} once it becomes restricted,
@@ -91,11 +90,11 @@ controlled mailing list {list_addr}.
 
 Once your reqeust is acted upon and you are added to the mailing list
 as an owner, if you would rather not receive {list_addr}
-traffic, or if you later set "mailing_list_email" attribute on
+traffic, or if you later set "List Email" attribute on
 https://user-management.icecube.aq and find yourself receiving duplicate
 emails, you can selectively stop mail delivery by going to
-https://groups.google.com, logging on with your IceCube account and
-changing "Subscription" value associated with {list_addr}
+https://groups.google.com/a/icecube.wisc.edu logging on with your IceCube
+account and changing "Subscription" value associated with {list_addr}
 from "Each email" to "No Email".
 
 If you have questions or need help, please email help@icecube.wisc.edu.
@@ -182,7 +181,7 @@ async def mailman_to_keycloak_member_import(
             username = username_from_canon_addr.get(email, username)
             if username not in all_users:
                 logger.warning(f"Unknown user {email}")
-                logger.info(f"Adding unknown {email} to list of instructions recipients")
+                logger.info(f"Needs instructions unknown {email}")
                 send_regular_instructions_to.add(email)
                 continue
             user_insts = all_users[username]["attributes"].get("institutions_last_seen", "")
@@ -190,14 +189,14 @@ async def mailman_to_keycloak_member_import(
                 logger.warning(
                     f"{username} disallowed: institutions {user_insts} not in {required_experiments} experiments"
                 )
-                logger.info(f"Adding disallowed {email} to list of instructions recipients")
+                logger.info(f"Need instructions disallowed {email}")
                 send_regular_instructions_to.add(email)
                 continue
             logger.info(f"Adding {username} as MEMBER")
             if not dryrun:
                 await add_user_group(keycloak_group, username, rest_client=keycloak)
         else:
-            logger.info(f"Adding non-icecube member {email} to list of instructions recipients")
+            logger.info(f"Needs instructions non-icecube {email}")
             send_regular_instructions_to.add(email)
 
     for email in send_regular_instructions_to:
