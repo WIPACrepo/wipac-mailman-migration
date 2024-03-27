@@ -4,8 +4,11 @@ import sys
 import logging
 import pickle
 import re
+# noinspection PyPackageRequirements
 from google.oauth2 import service_account
+# noinspection PyPackageRequirements
 from googleapiclient import discovery
+# noinspection PyPackageRequirements
 from googleapiclient.errors import HttpError
 
 from utils import get_google_group_config_from_mailman_config

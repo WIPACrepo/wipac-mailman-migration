@@ -5,8 +5,14 @@ import pickle
 import colorlog
 import logging
 from pprint import pformat
+
+# noinspection PyPackageRequirements
 from google.oauth2 import service_account
+
+# noinspection PyPackageRequirements
 from googleapiclient import discovery
+
+# noinspection PyPackageRequirements
 from googleapiclient.errors import HttpError
 
 from utils import get_google_group_config_from_mailman_config
@@ -19,7 +25,7 @@ logger.propagate = False
 logger.addHandler(handler)
 
 
-def set_controlled_mailing_list_setting(ggcfg):
+def set_controlled_mailing_list_setting(ggcfg, unsubscribe_instructions):
     def _override(cfg, key, value):
         if key not in cfg:
             logger.warning(f"Setting {key} to be '{value}'")
@@ -34,8 +40,14 @@ def set_controlled_mailing_list_setting(ggcfg):
     _override(
         ggcfg,
         "customFooterText",
-        "Message archives are on https://groups.google.com (log in with your IceCube account)\n"
-        "To unsubscribe, use the group membership management interface on https://user-management.icecube.aq",
+        (
+            "Message archives are at https://groups.google.com/a/icecube.wisc.edu"
+            + (
+                "\nTo unsubscribe, use the group membership management interface on https://user-management.icecube.aq"
+                if unsubscribe_instructions
+                else ""
+            )
+        ),
     )
     _override(ggcfg, "whoCanModerateMembers", "NONE")
 
@@ -43,6 +55,8 @@ def set_controlled_mailing_list_setting(ggcfg):
 
 
 def summarize_settings(ggcfg):
+    logger.info(f"{ggcfg['name'] = }")
+    logger.info(f"{ggcfg['description'] =}")
     logger.info(f"whoCanViewGroup = {ggcfg['whoCanViewGroup']}")
     logger.info(f"whoCanViewMembership = {ggcfg['whoCanViewMembership']}")
     logger.info(f"allowExternalMembers = {ggcfg['allowExternalMembers']}")
@@ -73,6 +87,11 @@ def main():
         "--controlled-mailing-list",
         action="store_true",
         help="override Google group settings to be compatible with the controlled mailing list paradigm",
+    )
+    parser.add_argument(
+        "--controlled-mailing-list-no-unsubscribe",
+        action="store_true",
+        help="don't add to the message footer instructions to unsubscribe from the list",
     )
     parser.add_argument(
         "--sa-creds",
@@ -109,6 +128,9 @@ def main():
     )
     args = parser.parse_args()
 
+    if args.controlled_mailing_list_no_unsubscribe and not args.controlled_mailing_list:
+        parser.error("--controlled-mailing-list-no-unsubscribe requires --controlled-mailing-list")
+
     logging.basicConfig(
         level=getattr(logging, args.log_level.upper()),
         format="%(levelname)s %(message)s",
@@ -124,7 +146,7 @@ def main():
     logger.debug(pformat(ggcfg))
 
     if args.controlled_mailing_list:
-        ggcfg = set_controlled_mailing_list_setting(ggcfg)
+        ggcfg = set_controlled_mailing_list_setting(ggcfg, not args.controlled_mailing_list_no_unsubscribe)
 
     summarize_settings(ggcfg)
 

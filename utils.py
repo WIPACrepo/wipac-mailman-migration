@@ -41,7 +41,9 @@ def get_google_group_config_from_mailman_config(mmcfg):
         "whoCanJoin": "CAN_REQUEST_TO_JOIN",
         "whoCanViewMembership": who_can_view_membership,
         "whoCanViewGroup": who_can_view_group,
-        "allowExternalMembers": "true",  # can't be tighter until we start forcing people to use @iwe addresses
+        # allowExternalMembers on controls whether external members can be added using groups.google.com.
+        # External members can *always* be added using API or admin.google.com.
+        "allowExternalMembers": "true",
         "whoCanPostMessage": who_can_post_message,
         "allowWebPosting": "true",
         "primaryLanguage": "en",
