@@ -75,11 +75,11 @@ You are receiving this message because you are registered as an owner of
 {list_addr} using {user_addr}, which is either
 a non-IceCube or a disallowed email address.
 
-In the near future this mailing list will become restricted to
-active members of {experiment_list} experiment(s),
+In the near future this mailing list will become restricted to active
+members of {experiment_list} experiment(s),
 and only allow either IceCube email addresses or addresses registered
-in the user profile attribute "mailing_list_email". This will apply
-to owners as well.
+in the user profile attribute "List Email". This will apply to owners
+as well.
  
 In order to remain an owner of {list_addr}
 after the transition, you must send a request to help@icecube.wisc.edu.
@@ -93,7 +93,7 @@ as an owner, if you would rather not receive {list_addr}
 traffic, or if you later set "List Email" attribute on
 https://user-management.icecube.aq and find yourself receiving duplicate
 emails, you can selectively stop mail delivery by going to
-https://groups.google.com/a/icecube.wisc.edu logging on with your IceCube
+https://groups.google.com, logging on with your IceCube
 account and changing "Subscription" value associated with {list_addr}
 from "Each email" to "No Email".
 
