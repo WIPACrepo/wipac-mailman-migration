@@ -164,6 +164,12 @@ async def mailman_to_keycloak_member_import(
         for u in all_users.values()
         if "canonical_email" in u["attributes"]
     }
+    username_from_list_addr = {
+        u["attributes"]["mailing_list_email"]: u["username"]
+        for u in all_users.values()
+        if u["attributes"].get("mailing_list_email")
+    }
+    username_from_email = username_from_canon_addr | username_from_list_addr
 
     allowed_non_members = []
     email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
@@ -178,7 +184,7 @@ async def mailman_to_keycloak_member_import(
     for email in mmcfg["digest_members"] + mmcfg["regular_members"] + allowed_non_members:
         username, domain = email.split("@")
         if domain == "icecube.wisc.edu":
-            username = username_from_canon_addr.get(email, username)
+            username = username_from_email.get(email, username)
             if username not in all_users:
                 logger.warning(f"Unknown user {email}")
                 logger.info(f"Needs instructions unknown {email}")
@@ -217,7 +223,7 @@ async def mailman_to_keycloak_member_import(
     for email in set(mmcfg["owner"] + mmcfg["moderator"]):
         username, domain = email.split("@")
         if domain == "icecube.wisc.edu":
-            username = username_from_canon_addr.get(email, username)
+            username = username_from_email.get(email, username)
             if username not in all_users:
                 logger.warning(f"Unknown owner {email}")
                 send_owner_instructions_to.add(email)
