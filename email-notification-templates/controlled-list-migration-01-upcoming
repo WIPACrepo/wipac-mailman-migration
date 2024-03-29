@@ -1,27 +1,25 @@
 Subject: Important information about this mailing list
 
-On __DATE__, this mailing list, __LIST_EMAIL__ (aka [__LIST_NAME__]) will be transitioned to our new system for mailing list management and become subject to new restrictions.
+On __DATE__, this mailing list, __LIST_EMAIL__ (aka [__LIST_NAME__]) will be transitioned to our new system for mailing list management and will become subject to new restrictions.
 
 Summary:
-(1) Members who are subscribed with IceCube addresses likely won't need take any action.
+(1) Members who are subscribed with IceCube addresses likely won't need to take any action.
 (2) Members who use non-IceCube email addresses may need to take action.
 (3) Archives will be available on https://groups.google.com.
 (4) (Un)subscriptions will be handled via https://user-management.icecube.aq.
 (5) Membership will be restricted to current members of institutions belonging to the following experiment(s): __EXPERIMENTS__.
 
-Now, the details:
+The details:
 
-The biggest user-facing change will be that only IceCube email addresses, and non-IceCube addresses specified in the "List Email" user profile attribute will be allowed to be members of __LIST_NAME__. If you are subscribed using a different email address, you will receive a separate email with instructions.
+The biggest user-facing change will be that only IceCube email addresses, and non-IceCube addresses specified in the "List Email" user profile attribute will be allowed to be members of [__LIST_NAME__]. If you are subscribed using a different email address, you will receive a separate email with instructions.
 
-Another new restriction will be that all __LIST_NAME__ members must also be current members of an institution that belongs to __EXPERIMENTS__ experiment(s). Users who don't meet this requirement will be automatically removed from this mailing list after a grace period. We will send separate instructions to the affected folks.
+Another new restriction will be that all [__LIST_NAME__] subscribers must be current members of an institution that belongs to __EXPERIMENTS__ experiment(s). Subscribers who don't meet this requirement will be automatically removed from this mailing list after a grace period. We will send separate instructions to the affected folks.
 
-After the transition, __LIST_NAME__ message archives, including past messages, will be available on https://groups.google.com (you will need to sign in using your IceCube account [1], even if you are subscribed using a non-IceCube email address).
+After the transition, [__LIST_NAME__] message archives, including past messages, will be available on https://groups.google.com (you will need to sign in using your IceCube account [1], even if you are subscribed using a non-IceCube email address).
 
-Subscriptions and un-subscriptions will be handled using https://user-management.icecube.aq group membership request/approve/leave workflow [2]. Note that this mailing list corresponds to group __FULL_LIST_GROUP_PATH__.
+Subscriptions and un-subscriptions will be handled using https://user-management.icecube.aq group membership request/approve/leave workflow [2]. Note that this mailing list corresponds to the group __FULL_LIST_GROUP_PATH__.
 
-Members who wish to receive list traffic in digest form will need to go to https://groups.google.com, login with their IceCube account [1], and, in the "My Groups" view, change "Each mail" to "Digest" in the "Subscription" column.
-
-You should receive notifications of being subscribed to this mailing list before we actually cutover. If you receive neither subscription confirmation nor instructions on how to re-subscribe to the mailing list, please contact help@icecube.wisc.edu.
+You should receive a notification about being subscribed to this mailing list before we actually cutover to the new system. If you receive neither a subscription confirmation nor instructions on how to re-subscribe to the mailing list, please contact help@icecube.wisc.edu.
 
 
 Please let me know if you have questions or concerns.
