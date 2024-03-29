@@ -21,7 +21,7 @@ Please ignore this email if it is a duplicate and you have already
 taken the required actions.
 
 In the near future this mailing list will become restricted to
-active members of {experiment_list} experiment(s),
+active members of the {experiment_list} experiment(s),
 and require subscribers to either use their IceCube email address
 or configure a custom email address in their profile to be used
 for all mailing lists whose membership management is automated.
@@ -29,7 +29,7 @@ for all mailing lists whose membership management is automated.
 You are currently subscribed to {list_addr} using
 {user_addr}, which is either a non-IceCube, or a disallowed email
 address, or you are not a member of an institution belonging to
-{experiment_list} experiment(s).
+the {experiment_list} experiment(s).
 
 In order to remain subscribed to {list_addr} after enforcement
 of membership restrictions begins you must:
@@ -42,7 +42,7 @@ of membership restrictions begins you must:
     - Under "My profile", fill in "List Email" field and click "Update".
 
 (2) Ensure that you are a member of an institution belonging to
-    one of {experiment_list} experiment(s).
+    one of the {experiment_list} experiment(s).
     - Go to https://user-management.icecube.aq and log in using
       your IceCube credentials.
     - Check your experiments under "Experiments/Institutions".
@@ -76,7 +76,7 @@ You are receiving this message because you are registered as an owner of
 a non-IceCube or a disallowed email address.
 
 In the near future this mailing list will become restricted to active
-members of {experiment_list} experiment(s),
+members of the {experiment_list} experiment(s),
 and only allow either IceCube email addresses or addresses registered
 in the user profile attribute "List Email". This will apply to owners
 as well.

@@ -13,7 +13,7 @@ The details:
 
 The biggest user-facing change will be that only IceCube email addresses, and non-IceCube addresses specified in the "List Email" user profile attribute will be allowed to be members of [__LIST_NAME__]. If you are subscribed using a different email address, you will receive a separate email with instructions.
 
-Another new restriction will be that all [__LIST_NAME__] subscribers must be current members of an institution that belongs to __EXPERIMENTS__ experiment(s). Subscribers who don't meet this requirement will be automatically removed from this mailing list after a grace period. We will send separate instructions to the affected folks.
+Another new restriction will be that all [__LIST_NAME__] subscribers must be current members of an institution that belongs to the __EXPERIMENTS__ experiment(s). Subscribers who don't meet this requirement will be automatically removed from this mailing list after a grace period. We will send separate instructions to the affected folks.
 
 After the transition, [__LIST_NAME__] message archives, including past messages, will be available on https://groups.google.com (you will need to sign in using your IceCube account [1], even if you are subscribed using a non-IceCube email address).
 
