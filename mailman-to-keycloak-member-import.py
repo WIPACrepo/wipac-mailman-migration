@@ -39,7 +39,8 @@ of membership restrictions begins you must:
     (Skip this step if you want to use your IceCube address.)
     - Go to https://user-management.icecube.aq and log in using
       your IceCube credentials.
-    - Under "My profile", fill in "List Email" field and click "Update".
+    - Under "My profile", fill in "Email for Mailing Lists" field
+      and click "Update".
 
 (2) Ensure that you are a member of an institution belonging to
     one of the {experiment_list} experiment(s).
@@ -78,8 +79,8 @@ a non-IceCube or a disallowed email address.
 In the near future this mailing list will become restricted to active
 members of the {experiment_list} experiment(s),
 and only allow either IceCube email addresses or addresses registered
-in the user profile attribute "List Email". This will apply to owners
-as well.
+in the user profile attribute "Email for Mailing Lists". This will apply
+to owners as well.
  
 In order to remain an owner of {list_addr}
 after the transition, you must send a request to help@icecube.wisc.edu.
@@ -90,7 +91,7 @@ controlled mailing list {list_addr}.
 
 Once your reqeust is acted upon and you are added to the mailing list
 as an owner, if you would rather not receive {list_addr}
-traffic, or if you later set "List Email" attribute on
+traffic, or if you later set "Email for Mailing Lists" attribute on
 https://user-management.icecube.aq and find yourself receiving duplicate
 emails, you can selectively stop mail delivery by going to
 https://groups.google.com, logging on with your IceCube
