@@ -13,6 +13,9 @@ from krs.token import get_rest_client
 from krs.groups import create_group, add_user_group
 from krs.users import list_users
 
+cca_logger = logging.getLogger('ClientCredentialsAuth')
+cca_logger.setLevel('WARNING')
+
 FULL_INSTRUCTIONS_MESSAGE = """
 You are receiving this messages because you need to take action to
 ensure uninterrupted delivery of messages from mailing list {list_addr}.
