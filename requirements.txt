@@ -3,3 +3,4 @@ google-auth-oauthlib
 wipac-keycloak-rest-services
 unidecode
 colorlog
+thefuzz
