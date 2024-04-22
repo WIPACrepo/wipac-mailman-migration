@@ -5,17 +5,18 @@ from pprint import pprint
 import pickle
 import asyncio
 
-import thefuzz.fuzz
+import thefuzz.fuzz  # type: ignore
 from krs.token import get_rest_client
 from krs.users import list_users
 
 
 async def main():
     parser = argparse.ArgumentParser(
-            description="clever searching for email",
+            description="Search various keycloak user fields for email. "
+                        "If no matches found, try fuzzy search.",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('all_users_pickle',
-                        help='will create if file does not exist')
+                        help='cache file for all keycloak users; will create if file does not exist')
     parser.add_argument('email',
                         help='address to search for')
     args = parser.parse_args()
@@ -47,9 +48,11 @@ async def main():
                                         f"{username}@icecube.wisc.edu"}))
             local_parts = [email.split('@')[0] for email in emails if email and email.split('@')[0]]
             local_part = args.email.split('@')[0]
-            ratios = [thefuzz.fuzz.ratio(local_part, lp) for lp in local_parts]
+            full_name = f"{userinfo.get('firstName')} {userinfo.get('lastName')}"
+            slack = attrs.get('slack')
+            ratios = [thefuzz.fuzz.ratio(local_part, lp) for lp in local_parts + [full_name, slack]]
             if any(r > 50 for r in ratios):
-                print(username, emails, ratios)
+                print(username, full_name, emails, slack, ratios)
 
 
 if __name__ == '__main__':
