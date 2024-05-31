@@ -14,6 +14,7 @@ from operator import itemgetter
 from krs.groups import get_group_membership
 from enum import *
 import re
+from collections import defaultdict
 
 MANUAL_EMAIL_MAP = {
     # It looks like this person has 2 accounts: sin and jin.
@@ -43,17 +44,30 @@ MANUAL_EMAIL_MAP = {
     'xu.zhai@icecube.wisc.edu': 'xuzhai',
     'mcpreston@icecube.wisc.edu': 'mcpreston',
     'carlos.pobes.guest@usap.gov': 'cpobes',
-    'collaborationmeetings@icecube.wisc.edu': None,
+    # 'collaborationmeetings@icecube.wisc.edu': None,
     'efriedman09@gmail.com': 'efriedman',
-    'i3runcoord@googlemail.com': None,
+    # 'i3runcoord@googlemail.com': None,
     'ralf.auer.guest@usap.gov': 'rauer',
     'zsuzsa@astro.columbia.edu': 'zmarka',
 }
 
-KNOWN_UNKNOWNS = [
-    'mtakahashi@chiba-u.jp',
-    'vxw@capella2.gsfc.nasa.gov'
-]
+#KNOWN_UNKNOWNS = {
+#    'mtakahashi@chiba-u.jp',
+#    'vxw@capella2.gsfc.nasa.gov',
+#    'mtakahashi@chiba-u.jp',
+#    'vxw@capella2.gsfc.nasa.gov',
+#    'annarita.margiotta@unibo.it',
+#    'aschu@fnal.gov',
+#    'javierggt@yahoo.com',
+#    'matthieu.heller@gmail.com',
+#    'maury.goodman@anl.gov',
+#    'mcg@anl.gov',
+#    'mirzoyan.razmik@gmail.com',
+#    'olivomartino@gmail.com',
+#    'pollmann@chiba-u.jp',
+#    'smirnov@ictp.it',
+#    'wjspindler@gmail.com',
+#}
 
 
 def get_sub_addr(user):
@@ -80,6 +94,7 @@ class FuzzyMatch:
     result: str
     ratio: int
     data: tuple
+
 
 def fuzzy_find(all_users, email):
     best_ratio = -1
@@ -124,18 +139,16 @@ def build_email_mappings(mm_emails, all_users, known_mappings):
             if len(matches) == 1 and matches[0].ratio >= 85:
                 email_mapping[email] = matches[0].result
             else:
-                #print("ambiguous fuzzy match", matches, file=sys.stderr)
                 ambiguous_fuzzy.append((email, matches))
-        else:
+        else:  # len(matches) > 1
             raise ValueError("Ambiguous exact match", matches)
-            ambiguous_exact.append((email, matches))
     return dict(email_mapping), ambiguous_fuzzy
 
 
 async def main():
     parser = argparse.ArgumentParser(
-            description="",
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        description="",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--list', required=True)
     parser.add_argument('--group', required=True)
     parser.add_argument('--skip', nargs='+', default=[])
@@ -156,48 +169,90 @@ async def main():
     list_cfg = pickle.load(open(f"{args.list}.pkl", 'rb'))
     email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
     mm_emails = list_cfg['digest_members'] + list_cfg['regular_members'] + \
-        [str_ for str_ in list_cfg['accept_these_nonmembers']
-         if re.match(email_regex, str_)]
-
-
-    #mm_emails = subprocess.check_output(
-    #    ['ssh', 'mailman', '/usr/lib/mailman/bin/list_members', args.list],
-    #    encoding='utf').split()
+                [str_ for str_ in list_cfg['accept_these_nonmembers']
+                 if re.match(email_regex, str_)]
     mm_emails = sorted(set(email.strip().lower() for email in mm_emails))
 
-    for email in KNOWN_UNKNOWNS + args.skip:
+    for email in args.skip:
         mm_emails.remove(email)
 
-    mm_email_map, ambiguous_fuzzy = build_email_mappings(mm_emails, all_users, MANUAL_EMAIL_MAP)
-    #for email, username in sorted(mm_email_map.items()):
-    #    print('MAP', email, username)
-    for row in ambiguous_fuzzy:
-        print('FAILED_TO_MAP', row[1])
-
-    return
+    mm_user_by_email, ambiguous_fuzzy = build_email_mappings(mm_emails, all_users,
+                                                        MANUAL_EMAIL_MAP)
+    unrecognized_emails = set(e[0] for e in ambiguous_fuzzy)
+    mm_email_by_user = defaultdict(list)
+    for email, username in mm_user_by_email.items():
+        mm_email_by_user[username].append(email)
 
     kc = get_rest_client()
-    group_usernames = await get_group_membership(args.group, rest_client=kc)
-    username_sub_addr = dict((username, get_sub_addr(all_users[username]))
-                             for username in group_usernames)
+    kc_users = set(await get_group_membership(args.group, rest_client=kc))
+    mm_users = set(u for u in mm_user_by_email.values())
+    kc_users_not_in_mm = kc_users - mm_users
+    user_sub_addr = dict((username, get_sub_addr(all_users[username]))
+                         for username in kc_users)
 
-    mm_usernames_not_in_group = set(mm_email_map[email] for email in mm_emails
-                                 if mm_email_map[email] not in group_usernames)
-    mm_emails_in_group = [email for email in mm_emails
-                          if mm_email_map[email] in group_usernames]
-    need_addr_change = [(mm_email_map[email], email, username_sub_addr[mm_email_map[email]])
-                        for email in mm_emails_in_group
-                        if (
-                                email != username_sub_addr[mm_email_map[email]]
-                                and not
-                                (email.endswith('@icecube.wisc.edu')
-                                 and username_sub_addr[mm_email_map[email]].endswith('@icecube.wisc.edu')))]
+    mm_users_not_kc = set(u for u in mm_users if u not in kc_users)
+    mm_emails_in_kc = [e for e in mm_emails if mm_user_by_email.get(e) in kc_users]
+    need_addr_change = dict((mm_user_by_email[em], em)
+                            for em in mm_emails_in_kc
+                            if (em != user_sub_addr[mm_user_by_email[em]]
+                                and not (em.endswith('@icecube.wisc.edu')
+                                    and user_sub_addr[mm_user_by_email[em]].endswith('@icecube.wisc.edu'))))
 
-    for line in sorted(need_addr_change):
-        print('ADDR_CHANGE', line)
-    for line in sorted(mm_usernames_not_in_group):
-        print('NOT_IN_GROUP', line)
+    # sanity check
+    for email in mm_emails:
+        if email in unrecognized_emails:
+            continue
+        user = mm_user_by_email[email]
+        if user in mm_users_not_kc:
+            continue
+        assert email in mm_emails_in_kc
+        if user in need_addr_change:
+            continue
+        else:
+            assert user in kc_users
+            assert email == user_sub_addr[user] or (email.endswith("@icecube.wisc.edu")
+                                                  and user_sub_addr[user].endswith('@icecube.wisc.edu'))
+
+    switch_date = 'XXX'
+    common_intro = f"""
+        Starting on {switch_date}, membership of the mailing list {args.list} will be
+        managed automatically to consist of all active members of the IceCube experiment.
+    """
+    for username in kc_users_not_in_mm:
+        user = all_users[username]
+        message = f"""
+        {user['firstName'] or username},
+        
+        {common_intro} As a result, you will be subscribed to {args.list}.
+        
+        Please email help@icecube.wisc.edu if you have questions.
+        
+        Vlad
+        """
+
+    for email in mm_emails:
+        try:
+            username = mm_user_by_email[email]
+            user = all_users[username]
+        except KeyError:
+            username = None
+            user = {}
+        paras = []
+        intro = f"""
+            {user.get('firstName') or username or 'Hello'}
+
+            You are receiving this message because you are currently subscribed to
+            the {args.list} mailing list as {', '.join(mm_email_by_user[username])}.
+            
+            Starting on {switch_date}, membership of the mailing list {args.list} will
+            be managed automatically based on user group memberships.
+            """
+
+
+
+
+
+
 
 if __name__ == '__main__':
     sys.exit(asyncio.run(main()))
-
