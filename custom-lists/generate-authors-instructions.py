@@ -164,7 +164,7 @@ async def main():
     for email in mm_emails + kc_only_emails:
         username = username_by_email[email]
         if username in processed_usernames:
-            print('XXXX', username)
+            print('handled-already', username)
             continue
         else:
             processed_usernames.add(username)
@@ -347,18 +347,22 @@ async def main():
         msg = msg.replace('>>', '    ')
         print(msg)
 
-        continue
         try:
+
+            external_addrs = [a for a in email_by_username[username]
+                              if not a.endswith('@icecube.wisc.edu')]
+            addrs = [f'{username}@icecube.wisc.edu'] + external_addrs
+            #addrs = ['vbrik@icecube.wisc.edu']
             email = EmailMessage()
             email["Subject"] = "authors@icecube.wisc.edu transition instructions"
             email["From"] = "no-reply@icecube.wisc.edu"
-            email["To"] = ['vbrik@icecube.wisc.edu', 'vbrik_gadm@icecube.wisc.edu']
-            email['Cc'] = ['vladimir.brik@gmail.com', 'vbrik-local@icecube.wisc.edu']
+            email["To"] = addrs
             email.set_content(msg)
-            with smtplib.SMTP('i3mail') as s:
-                s.send_message(email)
-        except:
-            print('==', username)
+            #with smtplib.SMTP('i3mail') as s:
+            #    s.send_message(email)
+        except Exception as exc:
+            print(exc)
+            print('==', username, email_by_username[username])
 
 
 
