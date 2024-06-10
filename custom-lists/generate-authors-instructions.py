@@ -124,6 +124,7 @@ async def main():
     parser = argparse.ArgumentParser(
             description="",
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("--only-users", nargs='+')
     args = parser.parse_args()
     pprint(args)
 
@@ -163,6 +164,9 @@ async def main():
     processed_usernames = set()
     for email in mm_emails + kc_only_emails:
         username = username_by_email[email]
+        if args.only_users and username not in args.only_users:
+            print('not-on-the-list', username)
+            continue
         if username in processed_usernames:
             print('handled-already', username)
             continue
