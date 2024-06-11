@@ -56,6 +56,8 @@ MANUAL_EMAIL_MAP = {
     # duplicate canonical addr
     'kai.leffhalm@icecube.wisc.edu': 'kleffhalm',
     'leonard.kosziol@icecube.wisc.edu': 'lkosziol',
+    # fails fuzzy search
+    'attila@fysik.su.se': 'ahidvegi',
 }
 
 REDUNDANT_ACCOUNTS = (
@@ -146,6 +148,7 @@ def fuzzy_find(all_users, email):
 def build_email_mappings(mm_emails, all_users, known_mappings):
     ambiguous_fuzzy = []
     user_from_email = {}
+    heuristic_usernames = []
     for email in [e for e in mm_emails]:
         assert email not in user_from_email
         if email in known_mappings:
@@ -158,6 +161,7 @@ def build_email_mappings(mm_emails, all_users, known_mappings):
             matches = fuzzy_find(all_users, email)
             if len(matches) == 1 and matches[0].ratio >= 85:
                 user_from_email[email] = matches[0].result
+                heuristic_usernames.append(matches[0].result)
             else:
                 ambiguous_fuzzy.append((email, matches))
         else:  # len(matches) > 1
@@ -167,7 +171,7 @@ def build_email_mappings(mm_emails, all_users, known_mappings):
     for email, username in user_from_email.items():
         email_from_user[username].append(email)
     unrecognized = set(e[0] for e in ambiguous_fuzzy)
-    return user_from_email, email_from_user, unrecognized
+    return user_from_email, email_from_user, unrecognized, heuristic_usernames
 
 
 async def main():
@@ -201,10 +205,10 @@ async def main():
     for email in args.skip:
         mm_emails.remove(email)
 
-    mm_user_by_email, mm_email_by_user, mm_unrecognized \
+    mm_addr_to_username, mm_username_to_addr, mm_unrecognized, heuristic_usernames \
         = build_email_mappings(mm_emails, all_users, MANUAL_EMAIL_MAP)
     for inactive, active in REDUNDANT_ACCOUNTS:
-        assert inactive not in mm_email_by_user
+        assert inactive not in mm_username_to_addr
 
     kc = get_rest_client()
     kc_users = set(await get_group_membership(args.group, rest_client=kc))
@@ -213,25 +217,30 @@ async def main():
             assert active in kc_users
             kc_users.remove(inactive)
 
-    username_by_email = {}
-    for email, username in mm_user_by_email.items():
-        username_by_email[email] = username
+    combined_addr_to_username = {}
+    for email, username in mm_addr_to_username.items():
+        combined_addr_to_username[email] = username
     for username in kc_users:
         sub_addr = get_sub_addr(all_users[username])
-        if username_by_email.get(sub_addr) not in (None, username):
-            print('AMBIGUOUS_EMAIL', username, sub_addr, username_by_email.get(sub_addr))
-            print(f"{(username_by_email.get(sub_addr), username)}")
-            print(f"{(username, username_by_email.get(sub_addr))}")
+        if combined_addr_to_username.get(sub_addr) not in (None, username):
+            print('AMBIGUOUS_EMAIL', username, sub_addr, combined_addr_to_username.get(sub_addr))
+            print(f"{(combined_addr_to_username.get(sub_addr), username)}")
+            print(f"{(username, combined_addr_to_username.get(sub_addr))}")
             assert False
-        username_by_email[sub_addr] = username
-    assert all(email not in mm_unrecognized for email in username_by_email)
+        combined_addr_to_username[sub_addr] = username
+    assert all(email not in mm_unrecognized for email in combined_addr_to_username)
 
-    email_by_username = defaultdict(list)
-    for
+    combined_username_to_addr = defaultdict(list)
+    for username, addrs in mm_username_to_addr.items():
+        combined_username_to_addr[username] = addrs[:]
+    for addr, username in combined_addr_to_username.items():
+        if addr not in combined_username_to_addr[username]:
+            combined_username_to_addr[username].append(addr)
 
+    seen_usernames = set()
     switch_date = 'XXX'
-    for email in set(list(username_by_email.keys()) + list(mm_unrecognized)):
-        username = username_by_email.get(email)
+    for email in set(list(combined_addr_to_username.keys()) + list(mm_unrecognized)):
+        username = combined_addr_to_username.get(email)
         breadcrumbs = []
         paras = []
         common_intro = f"""
@@ -242,53 +251,114 @@ async def main():
             
             (1) Membership of icecube-c@icecube will be automatically updated to
             match exactly the
-            set of all active members of the IceCube experiment, as configured
+            set of all active members of the IceCube and IceCube Gen2 experiments,
+            as configured
             by Institution Leads on https://user-management.icecube.aq.
             
             (2) Users will be subscribed to icecube-c@icecube using their
-            @icecube email address, unless overridden by "Email for Mailing Lists"
+            @icecube email address, unless overridden by the "Email for Mailing Lists" address
             on https://user-management.icecube.aq.
             
-            (3) Message archives will be accessible to members from IceCube's 
+            (3) Message archives will be accessible to members from IceCube's
             Google Groups page (see https://wiki.icecube.wisc.edu/index.php/Mailing_Lists#Message_Archives)
-        """
+            """
         paras.append(common_intro)
 
         if username is None:
             assert email in mm_unrecognized
             breadcrumbs.append('user_unknown')
-            user_unknown = f"""
+            paras.append(f"""
             You are currently subscribed to icecube-c@icecube using {email}
             but we were not able to match that address to an IceCube identity.
+            You will be unsubscribed from icecube-c@icecube unless you take
+            action.
             
             If you receive another email with instructions (sent to an email
             associated with an IceCube account), follow instructions
             in that email and ignore this one.
-            
-            Otherwise, contact help@icecube.wisc.edu. Failure to do so will
-            result in you being unsubscribed from icecube-c@icecube.
-            """
+            Otherwise, contact help@icecube.wisc.edu.
+            """)
         else:
-            if username in kc_users:
-                breadcrumbs.append('user_unknown')
+            if username in seen_usernames:
+                continue
+            else:
+                seen_usernames.add(username)
             sub_addr = get_sub_addr(all_users[username])
+            sub_addr_is_i3 = sub_addr.endswith('@icecube.wisc.edu')
+            display_sub_addr = ("your @icecube email address" if sub_addr_is_i3 else sub_addr)
             primary_to_canonical_addr_change = (email.endswith('@icecube.wisc.edu')
                                     and sub_addr.endswith('@icecube.wisc.edu'))
             no_effective_address_change = ((email == sub_addr
                                        or primary_to_canonical_addr_change)
-                                       and (len(email_by_username[username]) == 1
+                                       and (len(combined_username_to_addr[username]) == 1
                                             or all(e.endswith('@icecube.wisc.edu')
-                                                   for e in email_by_username[username])))
-            if email
+                                                   for e in combined_username_to_addr[username])))
+            if username in kc_users:
+                breadcrumbs.append('in_group')
+                if no_effective_address_change:
+                    breadcrumbs.append('no_addr_change')
+                    paras.append(f"""
+                    You will remain subscribed to icecube-c using
+                    {display_sub_addr}. """)
+                else:
+                    breadcrumbs.append('addr_change')
+                    if email not in mm_addr_to_username:
+                        breadcrumbs.append('not_in_mm')
+                    paras.append(f"""
+                    You are currently subscribed to icecube-c@icecube using
+                    {', '.join(mm_username_to_addr[username])}. After the transition
+                    {display_sub_addr} will be used instead.""")
+                if sub_addr_is_i3:
+                    breadcrumbs.append('sub_addr_is_i3')
+                else:
+                    breadcrumbs.append('sub_addr_is_ext')
+            else:
+                breadcrumbs.append('not_in_group')
+                paras.append(f"""
+                You are slated to be unsubscribed from icecube-c@icecube because
+                according to our records you are not a current member of any institution
+                of the IceCube or IceCube Gen2 experiments.
+                If this is incorrect, have your Institution
+                Lead add you to the appropriate institution.
+                If you are not a current member of IceCube/Gen2 but still need to
+                be on icecube-c@icecube, please email help@icecube.wisc.edu.
+                
+                Note that if you become qualified to be a member of icecube-c@icecube
+                you will be subscribed using {display_sub_addr}.""")
+
+            how_to_change_addr = f"""
+            If you want to use a different address,
+            log in to https://user-management.icecube.aq,
+            change your "Email for Mailing Lists" and click "Update".
+            Note that the address you choose will be used for all
+            mailing lists with automated membership management."""
+            paras[-1] = textwrap.dedent(paras[-1]) + ' ' + textwrap.dedent(how_to_change_addr).strip()
+
+            if username in heuristic_usernames:
+                breadcrumbs.append('heuristic')
+                paras.append(f"""
+                Please note that the ownership mapping of
+                {', '.join(mm_username_to_addr[username])} to IceCube username "{username}"
+                could not be established directly, and fuzzy search function was used instead.
+                Please report errors to help@icecube.wisc.edu. 
+                """)
+
+
+        paras.append(f"""
+        @@Please email help@icecube.wisc.edu if you have any questions.
+        
+        Vladimir
+        """)
+
 
 
         print('-'*90)
-        print('|', username, email)
+        print('|', username, email, combined_username_to_addr.get(username))
         print('%', breadcrumbs)
         msg_parts = []
         for para in [textwrap.dedent(p) for p in paras]:
             for sub_para in para.split('\n\n'):
-                text = textwrap.fill(sub_para.strip(), width=70, break_on_hyphens=False)
+                text = textwrap.fill(sub_para.strip(), width=75, break_on_hyphens=False)
                 msg_parts.append(text + '\n')
         msg = '\n'.join(msg_parts)
         msg = msg.replace('__', ' ')
@@ -298,35 +368,6 @@ async def main():
         msg = msg.replace('@@', '\n')
         msg = msg.replace('>>', '    ')
         print(msg)
-    #for username in kc_users_not_in_mm:
-    #    user = all_users[username]
-    #    message = f"""
-    #    {user['firstName'] or username},
-    #
-    #    {common_intro} As a result, you will be subscribed to {args.list}.
-    #
-    #    Please email help@icecube.wisc.edu if you have questions.
-    #
-    #    Vlad
-    #    """
-
-    #for email in mm_emails:
-    #    try:
-    #        username = mm_user_by_email[email]
-    #        user = all_users[username]
-    #    except KeyError:
-    #        username = None
-    #        user = {}
-    #    paras = []
-    #    intro = f"""
-    #        {user.get('firstName') or username or 'Hello'}
-
-    #        You are receiving this message because you are currently subscribed to
-    #        the {args.list} mailing list as {', '.join(mm_email_by_user[username])}.
-    #
-    #        Starting on {switch_date}, membership of the mailing list {args.list} will
-    #        be managed automatically based on user group memberships.
-    #        """
 
 
 
