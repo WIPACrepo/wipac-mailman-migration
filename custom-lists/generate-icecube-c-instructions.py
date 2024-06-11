@@ -49,6 +49,7 @@ MANUAL_EMAIL_MAP = {
     # 'i3runcoord@googlemail.com': None,
     'ralf.auer.guest@usap.gov': 'rauer',
     'zsuzsa@astro.columbia.edu': 'zmarka',
+    'helpdesk@icecube.wisc.edu': 'helpdesk',
 }
 
 #KNOWN_UNKNOWNS = {
@@ -141,7 +142,7 @@ def build_email_mappings(mm_emails, all_users, known_mappings):
             else:
                 ambiguous_fuzzy.append((email, matches))
         else:  # len(matches) > 1
-            raise ValueError("Ambiguous exact match", matches)
+            raise ValueError("Ambiguous exact match", email, matches)
     return dict(email_mapping), ambiguous_fuzzy
 
 
