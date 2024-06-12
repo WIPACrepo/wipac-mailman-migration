@@ -58,6 +58,10 @@ MANUAL_EMAIL_MAP = {
     'leonard.kosziol@icecube.wisc.edu': 'lkosziol',
     # fails fuzzy search
     'attila@fysik.su.se': 'ahidvegi',
+    'aschu@fnal.gov': 'aschukraft',
+    'pollmann@chiba-u.jp': 'aobertacke',
+    'javierggt@yahoo.com': 'jgonzalez',
+    'olivomartino@gmail.com': 'molivo',
 }
 
 REDUNDANT_ACCOUNTS = (
@@ -167,9 +171,9 @@ def build_email_mappings(mm_emails, all_users, known_mappings):
         else:  # len(matches) > 1
             raise ValueError("Ambiguous exact match", email, matches)
 
-    email_from_user = defaultdict(list)
+    email_from_user = defaultdict(set)
     for email, username in user_from_email.items():
-        email_from_user[username].append(email)
+        email_from_user[username].add(email)
     unrecognized = set(e[0] for e in ambiguous_fuzzy)
     return user_from_email, email_from_user, unrecognized, heuristic_usernames
 
@@ -230,16 +234,17 @@ async def main():
         combined_addr_to_username[sub_addr] = username
     assert all(email not in mm_unrecognized for email in combined_addr_to_username)
 
-    combined_username_to_addr = defaultdict(list)
+    combined_username_to_addr = defaultdict(set)
     for username, addrs in mm_username_to_addr.items():
-        combined_username_to_addr[username] = addrs[:]
+        combined_username_to_addr[username] = addrs.copy()
     for addr, username in combined_addr_to_username.items():
         if addr not in combined_username_to_addr[username]:
-            combined_username_to_addr[username].append(addr)
+            combined_username_to_addr[username].add(addr)
 
     seen_usernames = set()
     switch_date = 'XXX'
     for email in set(list(combined_addr_to_username.keys()) + list(mm_unrecognized)):
+        sub_addr = None
         username = combined_addr_to_username.get(email)
         breadcrumbs = []
         paras = []
@@ -249,34 +254,39 @@ async def main():
             On {switch_date}, the IceCube Collaboration mailing list
             icecube-c@icecube.wisc.edu will undergo several important changes:
             
-            (1) Membership of icecube-c@icecube will be automatically updated to
-            match exactly the
-            set of all active members of the IceCube and IceCube Gen2 experiments,
-            as configured
-            by Institution Leads on https://user-management.icecube.aq.
+            (1) Membership of icecube-c will update automatically
+            to be the active members of the IceCube and IceCube Gen2 experiments.
             
-            (2) Users will be subscribed to icecube-c@icecube using their
-            @icecube email address, unless overridden by the "Email for Mailing Lists" address
-            on https://user-management.icecube.aq.
+            (2) Members of icecube-c will be required to use their
+            @icecube email address, unless an alternative address
+            for mailing lists is configured [1].
             
             (3) Message archives will be accessible to members from IceCube's
-            Google Groups page (see https://wiki.icecube.wisc.edu/index.php/Mailing_Lists#Message_Archives)
-            """
+            Google Groups page [2]. Existing messages will be imported after
+            the transition.
+        """
         paras.append(common_intro)
 
         if username is None:
             assert email in mm_unrecognized
             breadcrumbs.append('user_unknown')
             paras.append(f"""
-            You are currently subscribed to icecube-c@icecube using {email}
+            You are currently subscribed to icecube-c using {email}
             but we were not able to match that address to an IceCube identity.
-            You will be unsubscribed from icecube-c@icecube unless you take
-            action.
+            Therefore, you are slated to be unsubscribed from icecube-c
+            unless you take action.
             
-            If you receive another email with instructions (sent to an email
-            associated with an IceCube account), follow instructions
-            in that email and ignore this one.
-            Otherwise, contact help@icecube.wisc.edu.
+            If you have an IceCube account and receive a similar message for it, then 
+            follow the instructions in that message and ignore this message.
+            
+            If you have an IceCube account, are an active member of an IceCube
+            or IceCube Gen2 institution, but don't receive another message
+            with instructions, you will need to update your institution membership
+            status [3].
+            
+            If you don't have an IceCube account, or are not an active member,
+            but need to be on icecube-c please contact help@icecube.wisc.edu as
+            soon as possible.
             """)
         else:
             if username in seen_usernames:
@@ -295,19 +305,23 @@ async def main():
                                                    for e in combined_username_to_addr[username])))
             if username in kc_users:
                 breadcrumbs.append('in_group')
-                if no_effective_address_change:
+                if no_effective_address_change and username in mm_username_to_addr:
                     breadcrumbs.append('no_addr_change')
                     paras.append(f"""
-                    You will remain subscribed to icecube-c using
-                    {display_sub_addr}. """)
+                        You will remain subscribed to icecube-c using {display_sub_addr}.""")
                 else:
-                    breadcrumbs.append('addr_change')
-                    if email not in mm_addr_to_username:
+                    if username not in mm_username_to_addr:
                         breadcrumbs.append('not_in_mm')
-                    paras.append(f"""
-                    You are currently subscribed to icecube-c@icecube using
-                    {', '.join(mm_username_to_addr[username])}. After the transition
-                    {display_sub_addr} will be used instead.""")
+                        paras.append(f"""
+                            Although you are currently not subscribed to icecube-c,
+                            after the transition you will be subscribed using {display_sub_addr}.""")
+                    else:
+                        breadcrumbs.append('addr_change')
+                        paras.append(f"""
+                            You are currently subscribed to icecube-c using
+                            {' and '.join(mm_username_to_addr[username])}.
+                            After the transition you will be subscribed using
+                            {display_sub_addr}.""")
                 if sub_addr_is_i3:
                     breadcrumbs.append('sub_addr_is_i3')
                 else:
@@ -315,50 +329,55 @@ async def main():
             else:
                 breadcrumbs.append('not_in_group')
                 paras.append(f"""
-                You are slated to be unsubscribed from icecube-c@icecube because
-                according to our records you are not a current member of any institution
-                of the IceCube or IceCube Gen2 experiments.
-                If this is incorrect, have your Institution
-                Lead add you to the appropriate institution.
-                If you are not a current member of IceCube/Gen2 but still need to
-                be on icecube-c@icecube, please email help@icecube.wisc.edu.
-                
-                Note that if you become qualified to be a member of icecube-c@icecube
-                you will be subscribed using {display_sub_addr}.""")
+                    You are slated to be unsubscribed from icecube-c because
+                    according to our records you are not a current member of any institution
+                    of the IceCube or IceCube Gen2 experiments.
+                    If this is incorrect, please update your institution status [3].
+                    
+                    If you are not a current member of IceCube or IceCube Gen2 but still need to
+                    be on icecube-c please email help@icecube.wisc.edu as soon as possible.
+                    
+                    Note that if you become qualified to be a member of icecube-c@icecube
+                    you will be subscribed using {display_sub_addr}.""")
 
             how_to_change_addr = f"""
-            If you want to use a different address,
-            log in to https://user-management.icecube.aq,
-            change your "Email for Mailing Lists" and click "Update".
-            Note that the address you choose will be used for all
-            mailing lists with automated membership management."""
-            paras[-1] = textwrap.dedent(paras[-1]) + ' ' + textwrap.dedent(how_to_change_addr).strip()
+            If you want to use a different address, please follow [1]."""
+            paras[-1] = textwrap.dedent(paras[-1]) + textwrap.dedent(how_to_change_addr)
 
             if username in heuristic_usernames:
                 breadcrumbs.append('heuristic')
                 paras.append(f"""
-                Please note that the ownership mapping of
-                {', '.join(mm_username_to_addr[username])} to IceCube username "{username}"
-                could not be established directly, and fuzzy search function was used instead.
-                Please report errors to help@icecube.wisc.edu. 
+                Please note that the ownership of
+                {' and '.join(addr for addr in mm_username_to_addr[username]
+                           if not addr.endswith('@icecube.wisc.edu'))}
+                could not be established directly, and a heuristic
+                was used to map it to IceCube username "{username}".
+                Please report mistakes to help@icecube.wisc.edu. 
                 """)
 
 
         paras.append(f"""
         @@Please email help@icecube.wisc.edu if you have any questions.
         
-        Vladimir
+        Vladimir""")
+
+        references = textwrap.dedent(f"""
+        [1] https://wiki.icecube.wisc.edu/index.php/Mailing_Lists#Subscription_Address
+        [2] https://wiki.icecube.wisc.edu/index.php/Mailing_Lists#Message_Archives
+        [3] https://wiki.icecube.wisc.edu/index.php/Mailing_Lists#Institution-based_Lists
         """)
 
 
 
         print('-'*90)
-        print('|', username, email, combined_username_to_addr.get(username))
+        print('|', username, 'all emails:', combined_username_to_addr.get(username),
+              'currently_subscribed_with:', mm_username_to_addr.get(username),
+              'will_be_subscribed_with', sub_addr)
         print('%', breadcrumbs)
         msg_parts = []
         for para in [textwrap.dedent(p) for p in paras]:
             for sub_para in para.split('\n\n'):
-                text = textwrap.fill(sub_para.strip(), width=75, break_on_hyphens=False)
+                text = textwrap.fill(sub_para.strip(), width=80, break_on_hyphens=False)
                 msg_parts.append(text + '\n')
         msg = '\n'.join(msg_parts)
         msg = msg.replace('__', ' ')
@@ -367,6 +386,7 @@ async def main():
         msg = msg.replace('##', '')
         msg = msg.replace('@@', '\n')
         msg = msg.replace('>>', '    ')
+        msg += references
         print(msg)
 
 
