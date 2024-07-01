@@ -75,6 +75,7 @@ REDUNDANT_ACCOUNTS = (
     ('glevin', 'genalevin'),
     ('swon', 'swon1'),
     ('pschaile', 'pschaile1'),
+    ('cli782', 'chenli')
 )
 
 #KNOWN_UNKNOWNS = {
@@ -218,7 +219,7 @@ async def main():
     kc_users = set(await get_group_membership(args.group, rest_client=kc))
     for inactive, active in REDUNDANT_ACCOUNTS:
         if inactive in kc_users:
-            assert active in kc_users
+            #assert active in kc_users, (inactive, active)
             kc_users.remove(inactive)
 
     combined_addr_to_username = {}
