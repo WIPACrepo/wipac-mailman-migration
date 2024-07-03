@@ -24,7 +24,8 @@ to remove members who are not actively working in your
 institution.
 
 To make this task easier, below you will find the list
-of all current members of {institution_path} sorted by the date on
+of all current members of {institution_path} who are not designated as
+authors, sorted by the date on
 which their account was created.
 
 We are moving toward a model where access to potentially sensitive resources
@@ -60,13 +61,18 @@ async def main():
 
     i3_insts = await list_insts('IceCube', rest_client=kc)
     i3g2_insts = await list_insts('IceCube-Gen2', rest_client=kc)
-
     all_insts = i3_insts | i3g2_insts
+
+    authors_i3 = await get_group_membership('/mail/authors', rest_client=kc)
+    authors_gen2 = await get_group_membership('/mail/authors-gen2', rest_client=kc)
+    authors = set(authors_i3+authors_gen2)
 
     for inst_path in all_insts:
         usernames = await get_group_membership(inst_path, rest_client=kc)
         ledger = []
         for username in usernames:
+            if username in authors:
+                continue
             user = all_users[username]
             ts = user.get('attributes', {}).get('createTimestamp', '19000101000000Z')
             year = ts[0:4]
@@ -74,6 +80,9 @@ async def main():
             day = ts[6:8]
             c_date = f"{year}-{month}-{day}"
             ledger.append((c_date, username, user.get('firstName', '') + ' ' + user.get('lastName', '')))
+        if not ledger:
+            print(inst_path, 'EMPTY')
+            continue
         ledger.sort()
         user_tbl = '\n'.join([' '.join((d, f"  {u:_<12}  ", n)) for d,u,n in ledger])
 
@@ -90,8 +99,8 @@ async def main():
         for admin in admins:
             email = f"{admin}@icecube.wisc.edu"
             email = 'vbrik@icecube.wisc.edu'
-            send_email(email, subj, msg)
-        return
+            #send_email(email, subj, msg)
+        #return
 
 
 
