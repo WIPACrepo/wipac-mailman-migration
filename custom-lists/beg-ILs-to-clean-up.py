@@ -17,29 +17,25 @@ import textwrap
 MSG = """
 Hello
 
-You are receiving this email because you are one of the managers of the
-{institution_path} institution.
+You are receiving this email because you are one of the managers of
+{institution_path}. 
+
+We are moving toward automating access control to potentially sensitive resources
+based on information configured via IceCube's Identity Management Console
+https://user-management.icecube.aq.
+For that we need institution groups to be kept up-to-date.
+
 Please use https://user-management.icecube.aq/institutions
 to remove members who are not actively working in your
-institution.
+institution by Monday, July 15.
 
 To make this task easier, below you will find the list
 of all current members of {institution_path} who are not designated as
 authors, sorted by the date on
 which their account was created.
 
-We are moving toward a model where access to potentially sensitive resources
-will be controlled automatically based on information configured
-via IceCube's Identity Management Console https://user-management.icecube.aq.
-For that to work, we need institution member groups to be kept up-to-date.
-
-Please complete this task no later than Friday, July 12.
-
 This message has been automatically generated. Please contact
 help@icecube.wisc.edu with questions.
-
-
-Vladimir
 """
 
 async def main():
@@ -78,7 +74,9 @@ async def main():
             year = ts[0:4]
             month = ts[4:6]
             day = ts[6:8]
-            c_date = f"{year}-{month}-{day}"
+            c_date = f"={year}-{month}-{day}"
+            if c_date == '=2020-09-01':
+                c_date = '<2020-09-01'
             ledger.append((c_date, username, user.get('firstName', '') + ' ' + user.get('lastName', '')))
         if not ledger:
             print(inst_path, 'EMPTY')
@@ -98,8 +96,8 @@ async def main():
         subj=f"Please update active members of {inst_path}"
         for admin in admins:
             email = f"{admin}@icecube.wisc.edu"
-            email = 'vbrik@icecube.wisc.edu'
-            #send_email(email, subj, msg)
+            #email = 'vbrik@icecube.wisc.edu'
+            send_email(email, subj, msg)
         #return
 
 
