@@ -149,7 +149,7 @@ def main():
                 logging.error(f"User {owner} already part of the group")
                 logging.warning(f"!!!  CONFIGURE AS MANAGER MANUALLY: {owner}")
 
-    email_regex = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+    email_regex = r"^[a-zA-Z0-9._%+-=]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
     for nonmember in mmcfg["accept_these_nonmembers"]:
         if nonmember in args.ignore:
             logging.info(f"Skipping non-member {nonmember} (on the ignore list)")

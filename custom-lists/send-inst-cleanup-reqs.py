@@ -97,7 +97,9 @@ async def main():
         for admin in admins:
             email = f"{admin}@icecube.wisc.edu"
             #email = 'vbrik@icecube.wisc.edu'
-            send_email(email, subj, msg)
+            print('not doing anything')
+            return
+            #send_email(email, subj, msg)
         #return
 
 
