@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 import argparse
 import sys
+import smtplib
 
 from email.message import EmailMessage
 
 MESSAGES = {
-    'BEFORE': """Hi all,
+    'BEFORE_BARNET': """Hi all,
 
 I hope this message find you well!
 
@@ -28,10 +29,9 @@ of the groups in which you are a member.
 As always, if there are issues or questions please contact
 help@icecube.wisc.edu.
 
-Thanks much!
-""",
-
-    'AFTER': """Hi all,
+Thanks much!""",
+    #################################################
+    'AFTER_BARNET': """Hi all,
 
 Just a note that the migration of the {list_name} list to Google groups is
 complete.
@@ -42,7 +42,20 @@ https://groups.google.com/a/icecube.wisc.edu/g/{list_name}
 
 If you run into any problems with this, please contact help@icecube.wisc.edu
 
-Thanks much!
+Thanks much!""",
+    #################################################
+    'SINGLE_VBRIK': """Hello
+
+This mailing list has been converted to a Google Group.
+
+No action on your part is necessary.
+
+List archives and your subscription settings can now be found at
+https://groups.google.com/a/icecube.wisc.edu/g/{list_name}
+(The archive migration process is ongoing and should finish soon.)
+
+
+If you run into any problems, please contact help@icecube.wisc.edu.
 """
 }
 
@@ -52,9 +65,10 @@ def main():
         description="",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--list-name', required=True,
-                        help="list name (part before @icecube.wisc.edu)")
-    parser.add_argument('--from-addr', default='help@icecube.wisc.edu',
-                        help="from address")
+                        help="list name (the part before @icecube.wisc.edu)")
+    parser.add_argument('--from-field', required=True, metavar='USERNAME',
+                        help="RFC-compliant from field, e.g. John Doe <jdoe@i.w.e>"
+                             " (has be subscribed to the mailing list!)")
     parser.add_argument('--message-name', required=True, choices=MESSAGES.keys(),
                         help="name of the message to be sent")
     parser.add_argument("--dry-run", action="store_true",
@@ -63,7 +77,7 @@ def main():
 
     msg = EmailMessage()
     msg["Subject"] = "Mailing list update"
-    msg["From"] = args.from_addr
+    msg["From"] = args.from_field
     msg["To"] = f"{args.list_name}@icecube.wisc.edu"
     content = MESSAGES[args.message_name].format(list_name=args.list_name)
     msg.set_content(content)
@@ -72,8 +86,8 @@ def main():
         print(msg.as_string())
         return 0
 
-    #with smtplib.SMTP('i3mail.icecube.wisc.edu') as s:
-    #    s.send_message(msg)
+    with smtplib.SMTP('i3mail.icecube.wisc.edu') as s:
+        s.send_message(msg)
 
 
 if __name__ == "__main__":
