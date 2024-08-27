@@ -148,6 +148,17 @@ def main():
     if args.controlled_mailing_list:
         ggcfg = set_controlled_mailing_list_setting(ggcfg, not args.controlled_mailing_list_no_unsubscribe)
 
+    # quick hack
+    if (ggcfg.get('whoCanViewMembership') == 'ALL_IN_DOMAIN_CAN_VIEW'
+            and ggcfg.get('whoCanViewGroup') == 'ALL_MANAGERS_CAN_VIEW'):
+        logging.warning("!!!")
+        logging.warning("Invalid Google Group configuration.")
+        logging.warning("WHO_CAN_VIEW_MEMBERSHIP_CANNOT_BE_BROADER_THAN_WHO_CAN_SEE_GROUP")
+        logging.warning("Changing whoCanViewMembership from ALL_IN_DOMAIN_CAN_VIEW to ALL_MANAGERS_CAN_VIEW")
+        logging.warning("Is this what you want?")
+        logging.warning("!!!")
+        ggcfg['whoCanViewMembership'] = 'ALL_MANAGERS_CAN_VIEW'
+        
     summarize_settings(ggcfg)
 
     scopes = [

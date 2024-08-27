@@ -147,7 +147,9 @@ def main():
         except HttpError as e:
             if e.status_code == 409:  # entity already exists
                 logging.error(f"User {owner} already part of the group")
+                logging.warning("!!!")
                 logging.warning(f"!!!  CONFIGURE AS MANAGER MANUALLY: {owner}")
+                logging.warning("!!!")
 
     email_regex = r"^[a-zA-Z0-9._%+-=]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
     for nonmember in mmcfg["accept_these_nonmembers"]:
@@ -171,7 +173,9 @@ def main():
     svc.close()
 
     if not group_has_managers:
+        logging.warning("!!!")
         logging.warning(f"Group has no managers. Nobody can approve messages and membership requests.")
+        logging.warning("!!!")
 
     addr, domain = ggcfg["email"].split("@")
     logging.info(
