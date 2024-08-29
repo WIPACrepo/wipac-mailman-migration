@@ -59,7 +59,7 @@ def get_google_group_config_from_mailman_config(mmcfg):
         # "defaultMessageDenyNotificationText": "",  # only matters if sendMessageDenyNotification is true
         "membersCanPostAsTheGroup": "false",
         "includeInGlobalAddressList": "false",  # has to do with Outlook integration
-        "whoCanLeaveGroup": ("ALL_MEMBERS_CAN_LEAVE" if mmcfg["unsubscribe_policy"] else "NONE_CAN_LEAVE"),
+        "whoCanLeaveGroup": ("NONE_CAN_LEAVE" if mmcfg["unsubscribe_policy"] else "ALL_MEMBERS_CAN_LEAVE"),
         "whoCanContactOwner": "ALL_IN_DOMAIN_CAN_CONTACT",
         "favoriteRepliesOnTop": "false",
         "whoCanApproveMembers": "ALL_MANAGERS_CAN_APPROVE",

@@ -63,6 +63,7 @@ def summarize_settings(ggcfg):
     logger.info(f"whoCanPostMessage = {ggcfg['whoCanPostMessage']}")
     logger.info(f"messageModerationLevel = {ggcfg['messageModerationLevel']}")
     logger.info(f"whoCanDiscoverGroup = {ggcfg['whoCanDiscoverGroup']}")
+    logger.info(f"whoCanLeaveGroup = {ggcfg['whoCanLeaveGroup']}")
     if ggcfg["whoCanPostMessage"] == "ANYONE_CAN_POST" and ggcfg["messageModerationLevel"] == "MODERATE_NONE":
         logger.warning("!!!  LIST ACCEPTS MESSAGES FROM ANYBODY WITHOUT MODERATION")
 

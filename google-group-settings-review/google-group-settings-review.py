@@ -27,6 +27,7 @@ def main():
         ('spamModerationLevel', "allow, moderate, reject"),
         ('whoCanModerateContent', "members, managers"),
     )
+    sendMessageDenyNotification
 
     privacy = (
         ('whoCanViewGroup', "anyone (bad!), domain (IceCube), members, managers"),

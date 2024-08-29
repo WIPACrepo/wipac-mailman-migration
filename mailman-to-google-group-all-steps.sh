@@ -9,9 +9,10 @@ set -ex
 ssh mailman "/usr/lib/mailman/bin/add_members --welcome-msg=n -r - $1 <<< vbrik@icecube.wisc.edu"
 ssh mailman ./pickle-mailman-list.py --list $1@icecube.wisc.edu
 scp mailman:$1@icecube.wisc.edu.pkl gitignore/
-scp i3mail:/mnt/i3mail/mailman/archives/private/$1.mbox/$1.mbox gitignore/archives/
+scp i3mail:/mnt/i3mail/mailman/archives/private/$1.mbox/$1.mbox gitignore/archives/ || true
 
-ls -lh gitignore/$1* gitignore/archives/$1*
+ls -lh gitignore/$1*
+ls -lh gitignore/archives/$1* || true
 
 press_any_key
 ./mailman-to-google-group-settings-import.py \
@@ -62,12 +63,12 @@ press_any_key
     --from-field "Vladimir Brik <vbrik@icecube.wisc.edu>"
 
 press_any_key
-scp i3mail:/mnt/i3mail/mailman/archives/private/$1.mbox/$1.mbox gitignore/archives/
-mkdir -p gitignore/archives/work/$1
-./mailman-to-google-group-message-import.py \
-    --sa-creds gitignore/mailing-list-tools-10746a87da2c.json \
-    --sa-delegator vbrik_gadm@icecube.wisc.edu \
-    --src-mbox gitignore/archives/$1.mbox \
-    --dst-group $1@icecube.wisc.edu \
-    --work-dir gitignore/archives/work/$1
+scp i3mail:/mnt/i3mail/mailman/archives/private/$1.mbox/$1.mbox gitignore/archives/ \
+    && mkdir -p gitignore/archives/work/$1 \
+    && ./mailman-to-google-group-message-import.py \
+        --sa-creds gitignore/mailing-list-tools-10746a87da2c.json \
+        --sa-delegator vbrik_gadm@icecube.wisc.edu \
+        --src-mbox gitignore/archives/$1.mbox \
+        --dst-group $1@icecube.wisc.edu \
+        --work-dir gitignore/archives/work/$1
 
