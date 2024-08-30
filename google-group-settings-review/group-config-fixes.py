@@ -65,6 +65,11 @@ def main():
     for pkl in Path(args.mailman_pickle_dir).glob('*.pkl'):
         with open(pkl, "rb") as f:
             mmcfg = pickle.load(f)
+
+        #if not mmcfg['archive']:
+        #    print(mmcfg['email'])
+        #continue
+
         if mmcfg['email'] in controlled_groups:
             continue
         try:
