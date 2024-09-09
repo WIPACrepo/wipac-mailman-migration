@@ -23,7 +23,7 @@ handler.setFormatter(colorlog.ColoredFormatter("%(log_color)s%(levelname)s:%(mes
 logger = colorlog.getLogger("settings-import")
 logger.propagate = False
 logger.addHandler(handler)
-
+logging.basicConfig(level=logging.INFO)
 
 def set_controlled_mailing_list_setting(ggcfg, unsubscribe_instructions):
     def _override(cfg, key, value):
@@ -67,6 +67,30 @@ def summarize_settings(ggcfg):
     if ggcfg["whoCanPostMessage"] == "ANYONE_CAN_POST" and ggcfg["messageModerationLevel"] == "MODERATE_NONE":
         logger.warning("!!!  LIST ACCEPTS MESSAGES FROM ANYBODY WITHOUT MODERATION")
 
+def add_alias(aliases, group_email, alias_email):
+    try:
+        aliases.insert(groupKey=group_email, body={
+            "alias": alias_email,
+        }).execute()
+    except HttpError as e:
+        if e.status_code == 409:  # entity already exists
+            logger.warning("Group already exists")
+        else:
+            raise
+
+def create_group(groups_admin, email, name, descr):
+    try:
+        groups_admin.insert(
+            body={"email": email,
+                "name": name,
+                "description": descr} ).execute()
+    except HttpError as e:
+        if e.status_code == 409:  # entity already exists
+            logger.warning("Group already exists")
+        else:
+            raise
+
+
 def insert_member(members, group_email, email, role):
     logger.info(f"Adding {email} as {role}")
     body = {
@@ -105,6 +129,17 @@ def main():
     from pprint import pprint
     pprint(aliases)
 
+    for alias, members in aliases:
+        print(f"sed -i '/^{alias}:/s/^/#/' /etc/aliases")
+    for alias, members in aliases:
+        print(f"echo {alias} OK >> /etc/postfix/local_recipients")
+    for alias, members in aliases:
+        print(f"echo {alias}@icecube.wisc.edu relay:aspmx.l.google.com >> /etc/postfix/transport")
+    print(f"postmap hash:/etc/postfix/local_recipients")
+    print(f"postmap hash:/etc/postfix/transport")
+    print("postalias /etc/aliases")
+    print("postfix reload")
+
     scopes = [
         "https://www.googleapis.com/auth/admin.directory.group",
         "https://www.googleapis.com/auth/admin.directory.group.member",
@@ -113,35 +148,34 @@ def main():
     creds = service_account.Credentials.from_service_account_file( args.sa_creds, scopes=scopes, subject=args.sa_delegate )
     admin_svc = discovery.build("admin", "directory_v1", credentials=creds, cache_discovery=False)
     groups_admin = admin_svc.groups()
+    groups_admin_aliases = groups_admin.aliases()
     groups_admin_members = admin_svc.members()
     settings_svc = discovery.build("groupssettings", "v1", credentials=creds, cache_discovery=False)
     groups_settings = settings_svc.groups()
     for alias, members in aliases:
         print(alias, members)
-        group_email = f"{alias}@icecube.wisc.edu"
-        try:
-            logger.info(f"Creating group {group_email}")
-            groups_admin.insert(
-                body={
-                    "email": group_email,
-                    "name": alias.capitalize(),
-                    "description": "This used to be an alias on i3mail",
-                }
-            ).execute()
-        except HttpError as e:
-            if e.status_code == 409:  # entity already exists
-                logger.warning("Group already exists")
-            else:
-                raise
+
+        if "zoomservice" in members:
+            group = f"zoom-{alias.replace('ic-','').replace('i3-', '')}"
+            group_email = f"{group}@icecube.wisc.edu"
+            name = f"Zoom Channel for {alias.capitalize()}"
+        else:
+            group = alias
+            group_email = f"{alias}@icecube.wisc.edu"
+            name = alias.capitalize()
+            continue
+        logger.info(f"Creating group {group_email}")
+        create_group(groups_admin, group_email, f"{name}", "This used to be an alias on i3mail")
+
+        if "zoomservice" in members:
+            logger.info(f"Adding {alias} alias")
+            add_alias(groups_admin_aliases, group_email, f"{alias}@icecube.wisc.edu")
 
         logger.info(f"Configuring Google group {group_email}")
         groups_settings.patch(
             groupUniqueId=group_email,
-            body={
-                "whoCanContactOwner": "ALL_IN_DOMAIN_CAN_CONTACT",
-                "isArchived": "true",
-            },
-        ).execute()
+            body={ "whoCanContactOwner": "ALL_IN_DOMAIN_CAN_CONTACT",
+                "isArchived": "true", }, ).execute()
 
         logger.info(f"Adding owner {args.add_owner}")
         insert_member(groups_admin_members, group_email, args.add_owner, 'OWNER')
@@ -150,8 +184,9 @@ def main():
             addr = recipient if '@' in recipient else f"{recipient}@icecube.wisc.edu"
             insert_member(groups_admin_members, group_email, addr, 'MANAGER')
 
-        logger.warning( f"Set 'Subject prefix' to '[{alias}]' in the 'Email options' section" )
-        logger.warning( f"https://groups.google.com/u/3/a/icecube.wisc.edu/g/{alias}/settings#email" )
+        prefix = 'zoom-' + alias if 'zoomservice' in members else alias
+        logger.warning( f"Set 'Subject prefix' to '[{prefix}]' in the 'Email options' section" )
+        logger.warning( f"https://groups.google.com/u/3/a/icecube.wisc.edu/g/{group}/settings#email" )
 
         return
 
