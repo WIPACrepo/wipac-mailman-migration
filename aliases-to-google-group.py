@@ -127,18 +127,18 @@ def main():
     aliases = [map(str.strip, l.split(':')) for l in lines]
     aliases = [(alias, member.split()) for alias, member in aliases]
     from pprint import pprint
-    pprint(aliases)
+    #pprint(aliases)
 
-    for alias, members in aliases:
-        print(f"sed -i '/^{alias}:/s/^/#/' /etc/aliases")
-    for alias, members in aliases:
-        print(f"echo {alias} OK >> /etc/postfix/local_recipients")
-    for alias, members in aliases:
-        print(f"echo {alias}@icecube.wisc.edu relay:aspmx.l.google.com >> /etc/postfix/transport")
-    print(f"postmap hash:/etc/postfix/local_recipients")
-    print(f"postmap hash:/etc/postfix/transport")
-    print("postalias /etc/aliases")
-    print("postfix reload")
+    #for alias, members in aliases:
+    #    print(f"sed -i '/^{alias}:/s/^/#/' /etc/aliases")
+    #for alias, members in aliases:
+    #    print(f"echo {alias} OK >> /etc/postfix/local_recipients")
+    #for alias, members in aliases:
+    #    print(f"echo {alias}@icecube.wisc.edu relay:aspmx.l.google.com >> /etc/postfix/transport")
+    #print(f"postmap hash:/etc/postfix/local_recipients")
+    #print(f"postmap hash:/etc/postfix/transport")
+    #print("postalias /etc/aliases")
+    #print("postfix reload")
 
     scopes = [
         "https://www.googleapis.com/auth/admin.directory.group",
@@ -156,16 +156,16 @@ def main():
         print(alias, members)
 
         if "zoomservice" in members:
-            group = f"zoom-{alias.replace('ic-','').replace('i3-', '')}"
-            group_email = f"{group}@icecube.wisc.edu"
-            name = f"Zoom Channel for {alias.capitalize()}"
+            core_name = alias.replace('ic-', '').replace('i3-', '')
+            group_prefix = f"zoom-{core_name}"
+            group_email = f"{group_prefix}@icecube.wisc.edu"
+            group_name = f"Zoom Channel for {core_name.replace('wg-', 'WG-').capitalize()}"
         else:
-            group = alias
+            group_prefix = alias
             group_email = f"{alias}@icecube.wisc.edu"
-            name = alias.capitalize()
-            continue
+            group_name = alias.capitalize()
         logger.info(f"Creating group {group_email}")
-        create_group(groups_admin, group_email, f"{name}", "This used to be an alias on i3mail")
+        create_group(groups_admin, group_email, group_name, "This used to be an alias on i3mail")
 
         if "zoomservice" in members:
             logger.info(f"Adding {alias} alias")
@@ -184,11 +184,11 @@ def main():
             addr = recipient if '@' in recipient else f"{recipient}@icecube.wisc.edu"
             insert_member(groups_admin_members, group_email, addr, 'MANAGER')
 
-        prefix = 'zoom-' + alias if 'zoomservice' in members else alias
-        logger.warning( f"Set 'Subject prefix' to '[{prefix}]' in the 'Email options' section" )
-        logger.warning( f"https://groups.google.com/u/3/a/icecube.wisc.edu/g/{group}/settings#email" )
+        logger.warning( f"Set 'Subject prefix' to '[{group_prefix}]' in the 'Email options' section" )
+        logger.warning( f"https://groups.google.com/u/3/a/icecube.wisc.edu/g/{group_prefix}/settings#email" )
 
-        return
+        input("Hit enter to proceed")
+
 
 
 if __name__ == "__main__":
